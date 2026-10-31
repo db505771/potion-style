@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Potion Glass (seeded)</title>
+<title>Potion Glass (same green, different tops)</title>
 <style>
 html, body {
   margin: 0 !important;
@@ -96,7 +96,7 @@ html, body {
   .liquid-glass-pure::after { display: none; }
 }
 
-/* the potion: a liquid body with a wavy surface. Nothing moves. */
+/* the potion: one green liquid, and a different surface on every button. Nothing moves. */
 .liquid-glass-pure .fx {
   position: absolute;
   inset: 0;
@@ -107,35 +107,18 @@ html, body {
   /* the space above the potion is green too, just lighter */
   background: linear-gradient(180deg, rgba(var(--wc, 150,255,190), calc(.3 * var(--fill))) 0%, rgba(var(--wc, 150,255,190), calc(.12 * var(--fill))) 100%);
 }
-.fx .liq {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  top: calc(var(--level) + 5px);
-  background:
-    radial-gradient(70% 90% at 50% 110%, rgba(var(--wc, 150,255,190), calc(.3 * var(--fill))), rgba(var(--wc, 150,255,190), 0) 70%),
-    linear-gradient(180deg, rgba(var(--c1, 70,230,130), calc(.5 * var(--fill))) 0%, rgba(var(--c2, 30,190,100), calc(.55 * var(--fill))) 55%, rgba(var(--c3, 8,110,60), calc(.6 * var(--fill))) 100%);
-  overflow: hidden;
-  transition: filter .3s;
-}
-.fx .wave {
-  position: absolute;
-  left: 0; right: 0;
-  height: 14px;
-  background-repeat: repeat-x;
-  opacity: var(--fill);
-}
-
+.fx svg { display: block; width: 100%; height: 100%; }
 
 /* press: squish, then spring back, and the potion glows brighter */
 .liquid-glass-pure:active,
 .liquid-glass-pure.p { transform: scale(.965); }
-.liquid-glass-pure:active .liq,
-.liquid-glass-pure.p .liq { filter: brightness(1.2) saturate(1.2); }
+.liquid-glass-pure:active .fx svg,
+.liquid-glass-pure.p .fx svg { filter: brightness(1.2) saturate(1.2); }
 </style>
 </head>
 <body>
 
-<button class="liquid-glass-pure" type="button" aria-label="Potion glass button"><span class="fx" aria-hidden="true"><i class="liq"></i><i class="wave w1"></i><i class="wave w2"></i></span></button>
+<button class="liquid-glass-pure" type="button" aria-label="Potion glass button"><span class="fx" aria-hidden="true"></span></button>
 
 <script>
 (function () {
@@ -225,11 +208,11 @@ html, body {
     } catch (e) {}
   }
 
-  /* ---------- seeded potion: every seed looks different ----------
-     A seed changes the potion color, how high it reaches, and the size, spacing and
-     position of both waves. The default seed is fixed so a button always looks the same.
-     To make each row different, load it with ?seed=<row number> on the end of the URL
-     (or call setPotionSeed(n) from native). */
+  /* ---------- seeded surface: same green everywhere, a different top on every button ----------
+     Each seed picks one of six surface styles (calm, rolling, choppy, peaked, splashy, tilted)
+     and then randomises its size, spacing and position, so no two look alike.
+     The default seed is fixed so a button always looks the same. To make each row different,
+     load it with ?seed=<row number> on the end of the URL (or call setPotionSeed(n) from native). */
   var SEED = 11, pm = /seed=(\d+)/.exec(location.search + location.hash), seed = pm ? +pm[1] : SEED;
   function rng(a) {
     return function () {
@@ -240,50 +223,66 @@ html, body {
     };
   }
   function pf(n) { return Math.round(n * 10) / 10; }
-  function uri(svg) { return 'data:image/svg+xml,' + svg.replace(/%/g, '%25').replace(/#/g, '%23').replace(/</g, '%3C').replace(/>/g, '%3E'); }
-  var PAL = [
-    { c1: '70,230,130',  c2: '30,190,100', c3: '8,110,60',  w: '150,255,190' },   /* emerald */
-    { c1: '150,240,80',  c2: '60,190,70',  c3: '20,110,45', w: '205,255,150' },   /* lime */
-    { c1: '60,230,190',  c2: '25,185,140', c3: '8,105,85',  w: '150,255,225' },   /* teal green */
-    { c1: '190,245,70',  c2: '90,200,60',  c3: '30,120,40', w: '225,255,140' }    /* toxic yellow-green */
-  ];
-  var liq = b.querySelector('.liq'), w1 = b.querySelector('.w1'), w2 = b.querySelector('.w2');
+  var fx = b.querySelector('.fx');
+
+  /* a surface shape: returns how far the surface sits above (negative) or below (positive) its baseline at x */
+  function surface(kind, r, W) {
+    var ph = r(0, 6.283), ph2 = r(0, 6.283), ph3 = r(0, 6.283), A, L, A1, L1, A2, L2, c, i, n, B, w, m;
+    var TAU = 6.283;
+    switch (kind) {
+      case 0:  /* calm: one gentle swell */
+        A = r(1.2, 2.2); L = r(90, 160);
+        return function (x) { return A * Math.sin(x / L * TAU + ph); };
+      case 1:  /* rolling: a big slow swell with a smaller one riding on it */
+        A1 = r(2.5, 4); L1 = r(120, 220); A2 = r(.8, 1.6); L2 = r(40, 70);
+        return function (x) { return A1 * Math.sin(x / L1 * TAU + ph) + A2 * Math.sin(x / L2 * TAU + ph2); };
+      case 2:  /* choppy: lots of small quick waves */
+        A1 = r(.9, 1.6); A2 = r(.8, 1.4); A = r(.6, 1.1); L1 = r(18, 35); L2 = r(26, 45); L = r(14, 24);
+        return function (x) { return A1 * Math.sin(x / L1 * TAU + ph) + A2 * Math.sin(x / L2 * TAU + ph2) + A * Math.sin(x / L * TAU + ph3); };
+      case 3:  /* peaked: sharp points like whipped potion */
+        A = r(2.5, 4.2); L = r(26, 52);
+        return function (x) { return -A * (1 - Math.abs(Math.sin(Math.PI * x / L + ph))) + A * .5; };
+      case 4:  /* splashy: mostly calm, with a few tall bumps */
+        n = Math.round(r(1, 3)); c = []; B = []; w = [];
+        for (i = 0; i < n; i++) { c.push(r(.12 * W, .88 * W)); B.push(r(4, 7)); w.push(r(8, 18)); }
+        A = r(.6, 1.1); L = r(80, 140);
+        return function (x) {
+          var y = A * Math.sin(x / L * TAU + ph), k;
+          for (k = 0; k < n; k++) y -= B[k] * Math.exp(-Math.pow((x - c[k]) / w[k], 2));
+          return y;
+        };
+      default: /* tilted: sloshed to one side */
+        m = r(-.016, .016); A = r(.7, 1.2); L = r(40, 80);
+        return function (x) { return m * (x - W / 2) + A * Math.sin(x / L * TAU + ph); };
+    }
+  }
+
   function potion() {
+    var W = b.offsetWidth, H = b.offsetHeight; if (!fx || W < 60 || H < 20) return;
     var R = rng(seed), r = function (lo, hi) { return lo + (hi - lo) * R(); };
-    var pal = PAL[Math.floor(R() * PAL.length)];
-    b.style.setProperty('--c1', pal.c1); b.style.setProperty('--c2', pal.c2);
-    b.style.setProperty('--c3', pal.c3); b.style.setProperty('--wc', pal.w);
-
-    var base = parseFloat(getComputedStyle(b).getPropertyValue('--level')) || 2;
-    var Y = base + r(0, 3) + 2;                      /* where the surface line sits, px from the top (about 4 to 7) */
-    var th = 14, yb = 7;                             /* wave tile height, and the line's place inside it */
-
-    /* main wave */
-    var pw = r(46, 96), amp = r(1.6, 4.4);
-    var t1 = "<svg xmlns='http://www.w3.org/2000/svg' width='" + pf(pw) + "' height='" + th + "' viewBox='0 0 " + pf(pw) + " " + th + "'>" +
-      "<defs><linearGradient id='g' gradientUnits='userSpaceOnUse' x1='0' y1='" + pf(yb - amp) + "' x2='0' y2='" + th + "'><stop offset='0' stop-color='rgb(" + pal.w + ")' stop-opacity='.6'/><stop offset='1' stop-color='rgb(" + pal.c1 + ")' stop-opacity='.5'/></linearGradient></defs>" +
-      "<path d='M0," + yb + "Q" + pf(pw / 4) + "," + pf(yb - 2 * amp) + " " + pf(pw / 2) + "," + yb + "T" + pf(pw) + "," + yb + "V" + th + "H0Z' fill='url(#g)'/>" +
-      "<path d='M0," + yb + "Q" + pf(pw / 4) + "," + pf(yb - 2 * amp) + " " + pf(pw / 2) + "," + yb + "T" + pf(pw) + "," + yb + "' fill='none' stroke='rgb(225,255,238)' stroke-opacity='.9' stroke-width='1.2'/></svg>";
-    w1.style.backgroundImage = 'url("' + uri(t1) + '")';
-    w1.style.backgroundSize = pf(pw) + 'px ' + th + 'px';
-    w1.style.backgroundPositionX = '-' + pf(r(0, pw)) + 'px';
-    w1.style.top = pf(Y - yb) + 'px';
-
-    /* back wave: different size and spacing, lighter */
-    var pw2 = r(50, 110), amp2 = r(1, 3);
-    var t2 = "<svg xmlns='http://www.w3.org/2000/svg' width='" + pf(pw2) + "' height='" + th + "' viewBox='0 0 " + pf(pw2) + " " + th + "'>" +
-      "<path d='M0," + yb + "Q" + pf(pw2 / 4) + "," + pf(yb + 2 * amp2) + " " + pf(pw2 / 2) + "," + yb + "T" + pf(pw2) + "," + yb + "V" + th + "H0Z' fill='rgb(" + pal.w + ")' fill-opacity='.22'/>" +
-      "<path d='M0," + yb + "Q" + pf(pw2 / 4) + "," + pf(yb + 2 * amp2) + " " + pf(pw2 / 2) + "," + yb + "T" + pf(pw2) + "," + yb + "' fill='none' stroke='rgb(200,255,225)' stroke-opacity='.5' stroke-width='1'/></svg>";
-    w2.style.backgroundImage = 'url("' + uri(t2) + '")';
-    w2.style.backgroundSize = pf(pw2) + 'px ' + th + 'px';
-    w2.style.backgroundPositionX = '-' + pf(r(0, pw2)) + 'px';
-    w2.style.top = pf(Y - yb - 1) + 'px';
-
-    liq.style.top = pf(Y + th - yb) + 'px';          /* the liquid starts right where the wave tile ends */
+    var S = parseFloat(getComputedStyle(b).getPropertyValue('--fill')); if (isNaN(S)) S = 1;
+    var base = parseFloat(getComputedStyle(b).getPropertyValue('--level')); if (isNaN(base)) base = 2;
+    var kind = Math.floor(R() * 6), front = surface(kind, r, W), back = surface(kind, r, W);
+    var Y = base + r(0, 3) + 5, xs = [], x, i, minY = 1e9, fy = [], by = [];
+    for (x = 0; x < W; x += 2) xs.push(x);
+    xs.push(W);
+    for (i = 0; i < xs.length; i++) { fy.push(front(xs[i])); by.push(back(xs[i]) * .8 - 1.5); minY = Math.min(minY, fy[i], by[i]); }
+    Y += Math.max(0, 1.5 - (Y + minY));                    /* keep the highest crest on screen */
+    function pts(a) { var d = '', k; for (k = 0; k < xs.length; k++) d += (k ? 'L' : 'M') + pf(xs[k]) + ',' + pf(Y + a[k]); return d; }
+    var o = function (v) { return pf(v * S * 100) / 100; };
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '"><defs>' +
+      '<linearGradient id="po" gradientUnits="userSpaceOnUse" x1="0" y1="' + pf(Y + minY) + '" x2="0" y2="' + H + '">' +
+      '<stop offset="0" stop-color="rgb(150,255,190)" stop-opacity="' + o(.6) + '"/><stop offset=".1" stop-color="rgb(70,230,130)" stop-opacity="' + o(.5) + '"/>' +
+      '<stop offset=".55" stop-color="rgb(30,190,100)" stop-opacity="' + o(.55) + '"/><stop offset="1" stop-color="rgb(8,110,60)" stop-opacity="' + o(.6) + '"/></linearGradient></defs>' +
+      '<path d="' + pts(by) + 'L' + W + ',' + H + 'L0,' + H + 'Z" fill="rgb(150,255,190)" fill-opacity="' + o(.22) + '"/>' +
+      '<path d="' + pts(fy) + 'L' + W + ',' + H + 'L0,' + H + 'Z" fill="url(#po)"/>' +
+      '<path d="' + pts(by) + '" fill="none" stroke="rgb(200,255,225)" stroke-opacity="' + o(.5) + '" stroke-width="1"/>' +
+      '<path d="' + pts(fy) + '" fill="none" stroke="rgb(230,255,240)" stroke-opacity=".9" stroke-width="1.3" stroke-linejoin="round"/></svg>';
+    fx.innerHTML = svg;
   }
   window.setPotionSeed = function (n) { seed = n >>> 0; potion(); };
   potion();
-
+  if (window.ResizeObserver) new ResizeObserver(potion).observe(b);
 })();
 </script>
 </body>
