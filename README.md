@@ -1,1 +1,232 @@
-# potion-style
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Potion Glass</title>
+<style>
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+  overflow: hidden;
+}
+
+.liquid-glass-pure {
+  --r: 28px;            /* corner radius: set to half the height for a pill */
+  --a: 135deg;          /* light direction, follows your finger */
+  --level: 9px;         /* how far down the potion surface sits */
+  --fill: 1;            /* how strong the green is: 1 = potion, 0.5 = clear glass with a green tint */
+
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  border-radius: var(--r);
+  overflow: hidden;
+
+  /* keeps WebView corners clean (no dark edge) */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+
+  /* the glass itself: almost clear, a hint of green */
+  background: linear-gradient(160deg,
+    rgba(150,255,190,.05) 0%,
+    rgba(150,255,190,0) 50%,
+    rgba(150,255,190,.04) 100%);
+
+  backdrop-filter: blur(5px) saturate(140%);
+  -webkit-backdrop-filter: blur(5px) saturate(140%);
+
+  /* green glow from inside the glass */
+  box-shadow:
+    inset 0 4px 6px -5px rgba(215,255,230,.28),
+    inset 0 -5px 9px -5px rgba(90,255,150,.4),
+    inset 0 0 18px -4px rgba(90,255,150,.28);
+
+  transition: transform .5s cubic-bezier(.34,1.7,.5,1), background .3s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* toxic yellow-green and teal tint along the inner edge */
+.liquid-glass-pure::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(110% 55% at 20% 0%, rgba(235,255,240,.12), transparent 55%);
+  box-shadow:
+    inset 5px 5px 9px -5px rgba(190,255,90,.32),
+    inset -5px -5px 9px -5px rgba(40,225,205,.3);
+}
+
+/* neon green rim that sweeps toward your finger */
+.liquid-glass-pure::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  padding: 1.4px;
+  pointer-events: none;
+  background: linear-gradient(var(--a),
+    rgba(200,255,220,.95),
+    rgba(80,255,150,.2) 30%,
+    rgba(80,255,150,.2) 68%,
+    rgba(150,255,190,.75));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+@supports not ((-webkit-mask-composite: xor) or (mask-composite: exclude)) {
+  .liquid-glass-pure::after { display: none; }
+}
+
+/* the potion: a liquid body with a wavy surface. Nothing moves. */
+.liquid-glass-pure .fx {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+.fx .liq {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  top: calc(var(--level) + 5px);
+  background:
+    radial-gradient(70% 90% at 50% 110%, rgba(200,255,110,calc(.3 * var(--fill))), rgba(200,255,110,0) 70%),
+    linear-gradient(180deg, rgba(70,230,130,calc(.5 * var(--fill))) 0%, rgba(30,190,100,calc(.55 * var(--fill))) 55%, rgba(8,110,60,calc(.6 * var(--fill))) 100%);
+  overflow: hidden;
+  transition: filter .3s;
+}
+.fx .wave {
+  position: absolute;
+  left: 0; right: 0;
+  height: 10px;
+  background-repeat: repeat-x;
+  background-size: 64px 10px;
+  opacity: var(--fill);
+}
+.fx .w1 { top: var(--level); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='10' viewBox='0 0 64 10'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='rgb(150,255,190)' stop-opacity='.6'/%3E%3Cstop offset='1' stop-color='rgb(70,230,130)' stop-opacity='.5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0,5Q16,0 32,5T64,5V10H0Z' fill='url(%23g)'/%3E%3Cpath d='M0,5Q16,0 32,5T64,5' fill='none' stroke='rgb(225,255,238)' stroke-opacity='.9' stroke-width='1.2'/%3E%3C/svg%3E"); }
+.fx .w2 { top: calc(var(--level) - 1px); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='10' viewBox='0 0 64 10'%3E%3Cpath d='M0,6Q16,11 32,6T64,6V10H0Z' fill='rgb(150,255,190)' fill-opacity='.22'/%3E%3Cpath d='M0,6Q16,11 32,6T64,6' fill='none' stroke='rgb(200,255,225)' stroke-opacity='.5' stroke-width='1'/%3E%3C/svg%3E"); }
+
+
+/* press: squish, then spring back, and the potion glows brighter */
+.liquid-glass-pure:active,
+.liquid-glass-pure.p { transform: scale(.965); }
+.liquid-glass-pure:active .liq,
+.liquid-glass-pure.p .liq { filter: brightness(1.2) saturate(1.2); }
+</style>
+</head>
+<body>
+
+<button class="liquid-glass-pure" type="button" aria-label="Potion glass button"><span class="fx" aria-hidden="true"><i class="liq"></i><i class="wave w1"></i><i class="wave w2"></i></span></button>
+
+<script>
+(function () {
+  var b = document.querySelector('.liquid-glass-pure');
+
+  /* rim light follows the finger */
+  function aim(e) {
+    var r = b.getBoundingClientRect();
+    b.style.setProperty('--a',
+      (Math.atan2(e.clientY - r.top - r.height / 2, e.clientX - r.left - r.width / 2) * 180 / Math.PI + 90).toFixed(0) + 'deg');
+  }
+  b.addEventListener('pointerdown', function (e) { b.classList.add('p'); aim(e); });
+  b.addEventListener('pointermove', aim, { passive: true });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) {
+    b.addEventListener(t, function () { b.classList.remove('p'); });
+  });
+
+  /* Optional real refraction (Chromium / Android WebView only).
+     A WebView can't see the native screen behind it, so there is nothing to bend
+     until the page has its own background. Call from native:
+       webView.evaluateJavascript("setGlassBackdrop('url(data:image/png;base64,...) center/cover')", null)
+     Pass a screenshot or any CSS background of the area behind the button. */
+  var chromium = /Chrome|Chromium|Edg/.test(navigator.userAgent) && !/OPR\/|Firefox/.test(navigator.userAgent);
+  var NS = 'http://www.w3.org/2000/svg', svg, ro;
+
+  function ramp(len, bz, c) {
+    var f = Math.min(.49, bz / len), s = '', i, t;
+    function col(x) { return c === 'r' ? 'rgb(' + x + ',0,0)' : 'rgb(0,0,' + x + ')'; }
+    for (i = 0; i <= 8; i++) { t = i / 8; s += "<stop offset='" + (t * f) + "' stop-color='" + col(Math.round(128 + 127 * Math.pow(1 - t, 2.4))) + "'/>"; }
+    s += "<stop offset='" + (1 - f) + "' stop-color='" + col(128) + "'/>";
+    for (i = 1; i <= 8; i++) { t = i / 8; s += "<stop offset='" + (1 - f + t * f) + "' stop-color='" + col(Math.round(128 - 128 * Math.pow(t, 2.4))) + "'/>"; }
+    return s;
+  }
+  function refract() {
+    var w = Math.round(b.offsetWidth), h = Math.round(b.offsetHeight);
+    if (w < 8 || h < 8) return;
+    var rad = Math.min(parseFloat(getComputedStyle(b).borderTopLeftRadius) || 28, h / 2, w / 2), bz = Math.min(w, h) * .42;
+    var m = "<svg xmlns='" + NS + "' width='" + w + "' height='" + h + "'><defs><clipPath id='k'><rect width='" + w + "' height='" + h + "' rx='" + rad + "'/></clipPath>" +
+      "<linearGradient id='x' x1='0' x2='1' y1='0' y2='0'>" + ramp(w, bz, 'r') + "</linearGradient>" +
+      "<linearGradient id='y' x1='0' x2='0' y1='0' y2='1'>" + ramp(h, bz, 'b') + "</linearGradient></defs>" +
+      "<g clip-path='url(#k)'><rect width='" + w + "' height='" + h + "' fill='rgb(0,128,0)'/>" +
+      "<rect width='" + w + "' height='" + h + "' fill='url(#x)' style='mix-blend-mode:screen'/>" +
+      "<rect width='" + w + "' height='" + h + "' fill='url(#y)' style='mix-blend-mode:screen'/></g></svg>";
+    if (!svg) {
+      svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('width', 0); svg.setAttribute('height', 0);
+      svg.style.cssText = 'position:absolute;pointer-events:none';
+      document.body.appendChild(svg);
+    }
+    /* three displacement passes with slightly different strength = colored edge fringes */
+    var sc = Math.max(30, Math.min(90, Math.min(w, h) * 1.1)), k = .06, fx = '',
+        mats = ['1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0', '0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0', '0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0'],
+        sg = [1 + k, 1, 1 - k];
+    mats.forEach(function (m, i) {
+      fx += '<feDisplacementMap in="SourceGraphic" in2="m" scale="' + (sc * sg[i]).toFixed(1) + '" xChannelSelector="R" yChannelSelector="B" result="d' + i + '"/>' +
+            '<feColorMatrix in="d' + i + '" type="matrix" values="' + m + '" result="c' + i + '"/>';
+    });
+    fx += '<feBlend in="c0" in2="c1" mode="screen" result="rg"/><feBlend in="rg" in2="c2" mode="screen"/>';
+    svg.innerHTML = '<filter id="lg" filterUnits="userSpaceOnUse" x="0" y="0" width="' + w + '" height="' + h + '" color-interpolation-filters="sRGB">' +
+      '<feImage x="0" y="0" width="' + w + '" height="' + h + '" preserveAspectRatio="none" result="m" href="data:image/svg+xml,' + encodeURIComponent(m) + '"/>' +
+      fx + '</filter>';
+    b.style.backdropFilter = 'url(#lg) blur(3px) saturate(140%)';
+  }
+  window.setGlassBackdrop = function (css) {
+    document.body.style.setProperty('background', css, 'important');
+    if (!chromium) return;
+    try {
+      refract();
+      if (!ro && window.ResizeObserver) { ro = new ResizeObserver(refract); ro.observe(b); }
+    } catch (e) {}
+  };
+
+  /* The WebView does seem to see the page background behind the button, so bend it
+     automatically in Chromium. A flat color has nothing to bend: put a gradient,
+     shapes or your content behind the button and the edge will refract it. */
+  /* Self-test: load this page with #demo on the end of the URL. It paints stripes behind
+     the button. If the stripes bend at the button's edge, distortion works in your WebView. */
+  if (location.hash === '#demo') {
+    document.body.style.setProperty('background',
+      'repeating-linear-gradient(90deg,#ff4f87 0 14px,#fff 14px 28px,#2f6bff 28px 42px)', 'important');
+  }
+
+  if (chromium) {
+    try {
+      refract();
+      if (window.ResizeObserver) { ro = new ResizeObserver(refract); ro.observe(b); }
+    } catch (e) {}
+  }
+
+})();
+</script>
+</body>
+</html>
