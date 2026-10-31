@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Enchanted Glass</title>
+<title>Cauldron Glass</title>
 <style>
 html, body {
   margin: 0 !important;
@@ -17,7 +17,8 @@ html, body {
 .liquid-glass-pure {
   --r: 28px;            /* corner radius: set to half the height for a pill */
   --a: 135deg;          /* light direction, follows your finger */
-  --glow: 1;            /* strength of the green edge glow: 0.5 softer, 1.5 stronger */
+  --dark: 1;            /* how dark the green glass is: 0.6 lighter, 1.4 darker */
+  --smoke: 1;           /* how strong the smoke is: 0.6 fainter, 1.5 thicker */
 
   position: relative;
   display: block;
@@ -37,21 +38,19 @@ html, body {
   /* keeps WebView corners clean (no dark edge) */
   -webkit-mask-image: -webkit-radial-gradient(white, black);
 
-  /* enchanted clear glass: almost no fill, the green lives in the edge */
-  background: linear-gradient(160deg,
-    rgba(150,255,190,.045) 0%,
-    rgba(150,255,190,.005) 50%,
-    rgba(150,255,190,.035) 100%);
+  /* dark green glass: deeper at the bottom, still see-through */
+  background: linear-gradient(180deg,
+    rgba(8,44,30,calc(.3 * var(--dark))) 0%,
+    rgba(4,30,22,calc(.46 * var(--dark))) 100%);
 
-  backdrop-filter: blur(5px) saturate(140%);
-  -webkit-backdrop-filter: blur(5px) saturate(140%);
+  backdrop-filter: blur(5px) saturate(125%);
+  -webkit-backdrop-filter: blur(5px) saturate(125%);
 
-  /* glowing green edge, from the very edge inward */
+  /* faint green light along the edges, strongest at the bottom */
   box-shadow:
-    inset 0 0 0 1px rgba(110,255,170,calc(.3 * var(--glow))),
-    inset 0 0 9px 1px rgba(70,255,150,calc(.5 * var(--glow))),
-    inset 0 0 22px -2px rgba(60,255,140,calc(.3 * var(--glow))),
-    inset 0 4px 6px -5px rgba(215,255,230,.3);
+    inset 0 0 0 .5px rgba(110,255,170,.18),
+    inset 0 -9px 14px -8px rgba(70,255,140,.45),
+    inset 0 5px 7px -6px rgba(200,255,225,.22);
 
   transition: transform .5s cubic-bezier(.34,1.7,.5,1);
   touch-action: manipulation;
@@ -68,26 +67,26 @@ html, body {
   z-index: 2;
   border-radius: inherit;
   pointer-events: none;
-  background: radial-gradient(110% 55% at 20% 0%, rgba(235,255,240,.1), transparent 55%);
+  background: radial-gradient(110% 55% at 20% 0%, rgba(225,255,235,.08), transparent 55%);
   box-shadow:
-    inset 5px 5px 9px -5px rgba(190,255,90,.3),
-    inset -5px -5px 9px -5px rgba(40,225,205,.28);
+    inset 5px 5px 9px -5px rgba(190,255,90,.22),
+    inset -5px -5px 9px -5px rgba(40,225,205,.22);
 }
 
-/* neon rim: brightest on the side facing your finger */
+/* thin green rim that sweeps toward your finger */
 .liquid-glass-pure::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 3;
   border-radius: inherit;
-  padding: 1.6px;
+  padding: 1.3px;
   pointer-events: none;
   background: linear-gradient(var(--a),
-    rgba(215,255,228,1),
-    rgba(70,255,150,.3) 30%,
-    rgba(70,255,150,.3) 68%,
-    rgba(160,255,195,.85));
+    rgba(190,255,215,.9),
+    rgba(70,255,150,.12) 30%,
+    rgba(70,255,150,.12) 68%,
+    rgba(150,255,190,.65));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
@@ -96,7 +95,7 @@ html, body {
   .liquid-glass-pure::after { display: none; }
 }
 
-/* a few faint wisps of green mist inside the glass (still, not animated) */
+/* cauldron smoke: a green glow along the bottom with plumes rising from it (still, not animated) */
 .liquid-glass-pure .fx {
   position: absolute;
   inset: 0;
@@ -104,11 +103,12 @@ html, body {
   border-radius: inherit;
   overflow: hidden;
   pointer-events: none;
+  background: linear-gradient(0deg, rgba(50,255,120,calc(.3 * var(--smoke))), rgba(50,255,120,0) 62%);
   transition: filter .3s;
 }
-.fx .wisp { position: absolute; border-radius: 50%; }
+.fx .puff { position: absolute; border-radius: 50%; }
 
-/* press: squish, then spring back, mist and glow brighten */
+/* press: squish, then spring back, smoke brightens */
 .liquid-glass-pure:active,
 .liquid-glass-pure.p { transform: scale(.965); }
 .liquid-glass-pure:active .fx,
@@ -117,7 +117,7 @@ html, body {
 </head>
 <body>
 
-<button class="liquid-glass-pure" type="button" aria-label="Enchanted glass button"><span class="fx" aria-hidden="true"></span></button>
+<button class="liquid-glass-pure" type="button" aria-label="Cauldron glass button"><span class="fx" aria-hidden="true"></span></button>
 
 <script>
 (function () {
@@ -208,10 +208,10 @@ html, body {
   }
 
 
-  /* ---------- green mist wisps ----------
+  /* ---------- smoke plumes ----------
      The same arrangement every time. Every button with the same size looks the same, so to
      make each row different, load it with ?seed=<row number> on the end of the URL. */
-  var SEED = 9, wm = /seed=(\d+)/.exec(location.search + location.hash);
+  var SEED = 4, sm = /seed=(\d+)/.exec(location.search + location.hash);
   function rng(a) {
     return function () {
       a = (a + 0x6D2B79F5) | 0;
@@ -220,21 +220,27 @@ html, body {
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
-  var fx = b.querySelector('.fx'), tints = ['90,255,160', '170,255,100', '60,230,200'];
-  function wisps() {
+  var fx = b.querySelector('.fx'), tints = ['60,255,130', '60,255,130', '150,255,90', '50,230,190'];
+  function smoke() {
     var W = b.offsetWidth, H = b.offsetHeight; if (!fx || W < 40 || H < 20) return;
-    var R = rng(wm ? +wm[1] : SEED), r = function (lo, hi) { return lo + (hi - lo) * R(); };
-    var n = Math.floor(r(2, 5)), h = '', i, w, ht, c;
-    for (i = 0; i < n; i++) {
-      w = r(70, 160); ht = r(H * .35, H * .6); c = tints[Math.floor(R() * 3)];
-      h += '<i class="wisp" style="left:' + r(-w * .2, W - w * .8).toFixed(0) + 'px;top:' + r(-ht * .2, H - ht * .8).toFixed(0) +
-           'px;width:' + w.toFixed(0) + 'px;height:' + ht.toFixed(0) + 'px;transform:rotate(' + r(-25, 25).toFixed(0) +
-           'deg);background:radial-gradient(closest-side,rgba(' + c + ',' + r(.14, .26).toFixed(2) + '),rgba(' + c + ',0))"></i>';
+    var R = rng(sm ? +sm[1] : SEED), r = function (lo, hi) { return lo + (hi - lo) * R(); };
+    var S = parseFloat(getComputedStyle(b).getPropertyValue('--smoke')) || 1;
+    var plumes = Math.max(2, Math.min(6, Math.round(W / 80 * r(.6, 1.1)))), out = '', p, k, c, x0, ph, rise, rho, cx, cy, al;
+    for (p = 0; p < plumes; p++) {
+      c = tints[Math.floor(R() * tints.length)]; x0 = r(0, W); ph = r(0, 6.3); rise = H * r(.7, 1.15);
+      for (k = 0; k < 5; k++) {
+        rho = H * (.2 + .1 * k) * r(.8, 1.25);
+        cx = x0 + Math.sin(k * 1.2 + ph) * H * r(.15, .35);
+        cy = H - rho * .4 - (k / 4) * rise;
+        al = (.3 - k * .045) * S * r(.7, 1.1);
+        out += '<i class="puff" style="left:' + (cx - rho).toFixed(0) + 'px;top:' + (cy - rho).toFixed(0) + 'px;width:' + (rho * 2).toFixed(0) +
+               'px;height:' + (rho * 2).toFixed(0) + 'px;background:radial-gradient(closest-side,rgba(' + c + ',' + al.toFixed(3) + '),rgba(' + c + ',0))"></i>';
+      }
     }
-    fx.innerHTML = h;
+    fx.innerHTML = out;
   }
-  wisps();
-  if (window.ResizeObserver) new ResizeObserver(wisps).observe(b);
+  smoke();
+  if (window.ResizeObserver) new ResizeObserver(smoke).observe(b);
 })();
 </script>
 </body>
