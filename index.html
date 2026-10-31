@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Potion Glass</title>
+<title>Enchanted Glass</title>
 <style>
 html, body {
   margin: 0 !important;
@@ -17,8 +17,7 @@ html, body {
 .liquid-glass-pure {
   --r: 28px;            /* corner radius: set to half the height for a pill */
   --a: 135deg;          /* light direction, follows your finger */
-  --level: 9px;         /* how far down the potion surface sits */
-  --fill: 1;            /* how strong the green is: 1 = potion, 0.5 = clear glass with a green tint */
+  --glow: 1;            /* strength of the green edge glow: 0.5 softer, 1.5 stronger */
 
   position: relative;
   display: block;
@@ -38,22 +37,23 @@ html, body {
   /* keeps WebView corners clean (no dark edge) */
   -webkit-mask-image: -webkit-radial-gradient(white, black);
 
-  /* the glass itself: almost clear, a hint of green */
+  /* enchanted clear glass: almost no fill, the green lives in the edge */
   background: linear-gradient(160deg,
-    rgba(150,255,190,.05) 0%,
-    rgba(150,255,190,0) 50%,
-    rgba(150,255,190,.04) 100%);
+    rgba(150,255,190,.045) 0%,
+    rgba(150,255,190,.005) 50%,
+    rgba(150,255,190,.035) 100%);
 
   backdrop-filter: blur(5px) saturate(140%);
   -webkit-backdrop-filter: blur(5px) saturate(140%);
 
-  /* green glow from inside the glass */
+  /* glowing green edge, from the very edge inward */
   box-shadow:
-    inset 0 4px 6px -5px rgba(215,255,230,.28),
-    inset 0 -5px 9px -5px rgba(90,255,150,.4),
-    inset 0 0 18px -4px rgba(90,255,150,.28);
+    inset 0 0 0 1px rgba(110,255,170,calc(.3 * var(--glow))),
+    inset 0 0 9px 1px rgba(70,255,150,calc(.5 * var(--glow))),
+    inset 0 0 22px -2px rgba(60,255,140,calc(.3 * var(--glow))),
+    inset 0 4px 6px -5px rgba(215,255,230,.3);
 
-  transition: transform .5s cubic-bezier(.34,1.7,.5,1), background .3s;
+  transition: transform .5s cubic-bezier(.34,1.7,.5,1);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
@@ -68,26 +68,26 @@ html, body {
   z-index: 2;
   border-radius: inherit;
   pointer-events: none;
-  background: radial-gradient(110% 55% at 20% 0%, rgba(235,255,240,.12), transparent 55%);
+  background: radial-gradient(110% 55% at 20% 0%, rgba(235,255,240,.1), transparent 55%);
   box-shadow:
-    inset 5px 5px 9px -5px rgba(190,255,90,.32),
-    inset -5px -5px 9px -5px rgba(40,225,205,.3);
+    inset 5px 5px 9px -5px rgba(190,255,90,.3),
+    inset -5px -5px 9px -5px rgba(40,225,205,.28);
 }
 
-/* neon green rim that sweeps toward your finger */
+/* neon rim: brightest on the side facing your finger */
 .liquid-glass-pure::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 3;
   border-radius: inherit;
-  padding: 1.4px;
+  padding: 1.6px;
   pointer-events: none;
   background: linear-gradient(var(--a),
-    rgba(200,255,220,.95),
-    rgba(80,255,150,.2) 30%,
-    rgba(80,255,150,.2) 68%,
-    rgba(150,255,190,.75));
+    rgba(215,255,228,1),
+    rgba(70,255,150,.3) 30%,
+    rgba(70,255,150,.3) 68%,
+    rgba(160,255,195,.85));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
@@ -96,7 +96,7 @@ html, body {
   .liquid-glass-pure::after { display: none; }
 }
 
-/* the potion: a liquid body with a wavy surface. Nothing moves. */
+/* a few faint wisps of green mist inside the glass (still, not animated) */
 .liquid-glass-pure .fx {
   position: absolute;
   inset: 0;
@@ -104,39 +104,20 @@ html, body {
   border-radius: inherit;
   overflow: hidden;
   pointer-events: none;
-}
-.fx .liq {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  top: calc(var(--level) + 5px);
-  background:
-    radial-gradient(70% 90% at 50% 110%, rgba(200,255,110,calc(.3 * var(--fill))), rgba(200,255,110,0) 70%),
-    linear-gradient(180deg, rgba(70,230,130,calc(.5 * var(--fill))) 0%, rgba(30,190,100,calc(.55 * var(--fill))) 55%, rgba(8,110,60,calc(.6 * var(--fill))) 100%);
-  overflow: hidden;
   transition: filter .3s;
 }
-.fx .wave {
-  position: absolute;
-  left: 0; right: 0;
-  height: 10px;
-  background-repeat: repeat-x;
-  background-size: 64px 10px;
-  opacity: var(--fill);
-}
-.fx .w1 { top: var(--level); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='10' viewBox='0 0 64 10'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='rgb(150,255,190)' stop-opacity='.6'/%3E%3Cstop offset='1' stop-color='rgb(70,230,130)' stop-opacity='.5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0,5Q16,0 32,5T64,5V10H0Z' fill='url(%23g)'/%3E%3Cpath d='M0,5Q16,0 32,5T64,5' fill='none' stroke='rgb(225,255,238)' stroke-opacity='.9' stroke-width='1.2'/%3E%3C/svg%3E"); }
-.fx .w2 { top: calc(var(--level) - 1px); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='10' viewBox='0 0 64 10'%3E%3Cpath d='M0,6Q16,11 32,6T64,6V10H0Z' fill='rgb(150,255,190)' fill-opacity='.22'/%3E%3Cpath d='M0,6Q16,11 32,6T64,6' fill='none' stroke='rgb(200,255,225)' stroke-opacity='.5' stroke-width='1'/%3E%3C/svg%3E"); }
+.fx .wisp { position: absolute; border-radius: 50%; }
 
-
-/* press: squish, then spring back, and the potion glows brighter */
+/* press: squish, then spring back, mist and glow brighten */
 .liquid-glass-pure:active,
 .liquid-glass-pure.p { transform: scale(.965); }
-.liquid-glass-pure:active .liq,
-.liquid-glass-pure.p .liq { filter: brightness(1.2) saturate(1.2); }
+.liquid-glass-pure:active .fx,
+.liquid-glass-pure.p .fx { filter: brightness(1.35); }
 </style>
 </head>
 <body>
 
-<button class="liquid-glass-pure" type="button" aria-label="Potion glass button"><span class="fx" aria-hidden="true"><i class="liq"></i><i class="wave w1"></i><i class="wave w2"></i></span></button>
+<button class="liquid-glass-pure" type="button" aria-label="Enchanted glass button"><span class="fx" aria-hidden="true"></span></button>
 
 <script>
 (function () {
@@ -226,6 +207,34 @@ html, body {
     } catch (e) {}
   }
 
+
+  /* ---------- green mist wisps ----------
+     The same arrangement every time. Every button with the same size looks the same, so to
+     make each row different, load it with ?seed=<row number> on the end of the URL. */
+  var SEED = 9, wm = /seed=(\d+)/.exec(location.search + location.hash);
+  function rng(a) {
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var fx = b.querySelector('.fx'), tints = ['90,255,160', '170,255,100', '60,230,200'];
+  function wisps() {
+    var W = b.offsetWidth, H = b.offsetHeight; if (!fx || W < 40 || H < 20) return;
+    var R = rng(wm ? +wm[1] : SEED), r = function (lo, hi) { return lo + (hi - lo) * R(); };
+    var n = Math.floor(r(2, 5)), h = '', i, w, ht, c;
+    for (i = 0; i < n; i++) {
+      w = r(70, 160); ht = r(H * .35, H * .6); c = tints[Math.floor(R() * 3)];
+      h += '<i class="wisp" style="left:' + r(-w * .2, W - w * .8).toFixed(0) + 'px;top:' + r(-ht * .2, H - ht * .8).toFixed(0) +
+           'px;width:' + w.toFixed(0) + 'px;height:' + ht.toFixed(0) + 'px;transform:rotate(' + r(-25, 25).toFixed(0) +
+           'deg);background:radial-gradient(closest-side,rgba(' + c + ',' + r(.14, .26).toFixed(2) + '),rgba(' + c + ',0))"></i>';
+    }
+    fx.innerHTML = h;
+  }
+  wisps();
+  if (window.ResizeObserver) new ResizeObserver(wisps).observe(b);
 })();
 </script>
 </body>
